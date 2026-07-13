@@ -39,25 +39,40 @@ function emptyPositions(grid: Grid): Pos[] {
   return out;
 }
 
-function bfs(grid: Grid, from: Pos, to: Pos): boolean {
+// ВОЗВРАЩАЕТ ПОЛНЫЙ ПУТЬ МАРШРУТА
+function findPathBFS(grid: Grid, from: Pos, to: Pos): Pos[] | null {
   const [fr, fc] = from, [tr, tc] = to;
-  if (grid[tr][tc] !== null) return false;
-  if (fr === tr && fc === tc) return true;
-  const vis = Array.from({ length: G }, () => Array(G).fill(false));
-  vis[fr][fc] = true;
-  const q: Pos[] = [from];
-  while (q.length) {
-    const [r, c] = q.shift()!;
-    if (r === tr && c === tc) return true;
+  if (grid[tr][tc] !== null) return null;
+  if (fr === tr && fc === tc) return [from];
+
+  const queue: Pos[] = [from];
+  const parent: { [key: string]: string } = {};
+  const vis = new Set<string>([key(fr, fc)]);
+
+  while (queue.length > 0) {
+    const [r, c] = queue.shift()!;
+    if (r === tr && c === tc) {
+      // Восстанавливаем путь из предков
+      const path: Pos[] = [];
+      let currKey = key(tr, tc);
+      while (currKey) {
+        path.push(parseKey(currKey));
+        currKey = parent[currKey];
+      }
+      return path.reverse();
+    }
+
     for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
       const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < G && nc >= 0 && nc < G && !vis[nr][nc] && grid[nr][nc] === null) {
-        vis[nr][nc] = true;
-        q.push([nr, nc]);
+      const nKey = key(nr, nc);
+      if (nr >= 0 && nr < G && nc >= 0 && nc < G && !vis.has(nKey) && grid[nr][nc] === null) {
+        vis.add(nKey);
+        parent[nKey] = key(r, c);
+        queue.push([nr, nc]);
       }
     }
   }
-  return false;
+  return null;
 }
 
 function findLines(grid: Grid, r: number, c: number): Set<string> {
@@ -95,7 +110,7 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
       for (let tr = 0; tr < G; tr++) {
         for (let tc = 0; tc < G; tc++) {
           if (grid[tr][tc] !== null) continue;
-          if (!bfs(grid, [r, c], [tr, tc])) continue;
+          if (!findPathBFS(grid, [r, c], [tr, tc])) continue;
           const t = grid.map(row => [...row]);
           t[tr][tc] = t[r][c];
           t[r][c] = null;
@@ -114,7 +129,7 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
 function BallEl({
   colorIdx, size, selected, anim,
 }: {
-  colorIdx: number; size: number; selected?: boolean; anim?: 'pop-in' | 'pop-out' | 'pulse';
+  colorIdx: number; size: number; selected?: boolean; anim?: 'pop-in' | 'pop-out' | 'pulse' | 'trail';
 }) {
   const p = PALETTE[colorIdx];
   return (
@@ -130,12 +145,12 @@ function BallEl({
         animation:
           anim === 'pop-in' ? 'ball-pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards' :
           anim === 'pop-out' ? 'ball-pop-out 0.38s ease-in forwards' :
-          anim === 'pulse' ? 'ball-pulse 0.9s ease-in-out infinite' : undefined,
+          anim === 'pulse' ? 'ball-pulse 0.9s ease-in-out infinite' :
+          anim === 'trail' ? 'ball-trail 0.4s ease-out forwards' : undefined,
         flexShrink: 0,
         position: 'relative',
       }}
     >
-      {/* Specular highlight */}
       <div style={{
         position: 'absolute', top: '14%', left: '18%',
         width: '28%', height: '22%', borderRadius: '50%',
@@ -159,17 +174,15 @@ export default function App() {
   const [hintSearched, setHintSearched] = useState(false);
   const [hintLoading, setHintLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [flash, setFlash] = useState<Set<string>>(new Set());  // pop-out anim
-  const [pop, setPop] = useState<Set<string>>(new Set());       // pop-in anim
-
-  // Capture next in a ref so async timeouts always read latest value
+  const [flash, setFlash] = useState<Set<string>>(new Set());  
+  const [pop, setPop] = useState<Set<string>>(new Set());       
+  const [trail, setTrail] = useState<{pos: Pos, colorIdx: number, id: number}[]>([]);
+  
   const nextRef = useRef(next);
   useEffect(() => { nextRef.current = next; }, [next]);
 
-  // ── High score persistence ──
   useEffect(() => { localStorage.setItem('chromaline_hi', String(hi)); }, [hi]);
 
-  // ── Score helper ──
   const addScore = useCallback((pts: number) => {
     setScore(s => {
       const ns = s + pts;
@@ -178,7 +191,6 @@ export default function App() {
     });
   }, []);
 
-  // ── New game ──
   const newGame = useCallback(() => {
     const g = emptyGrid();
     const empty = [...emptyPositions(g)].sort(() => Math.random() - 0.5);
@@ -194,12 +206,13 @@ export default function App() {
     setHintSearched(false);
     setFlash(new Set());
     setPop(new Set());
+    setTrail([]);
     setBusy(false);
   }, []);
 
   useEffect(() => { newGame(); }, [newGame]);
 
-  // ── Cell click ──
+  // ПОШАГОВАЯ АНИМАЦИЯ ДВИЖЕНИЯ И ШЛЕЙФА
   const onCell = useCallback((r: number, c: number) => {
     if (over || busy) return;
     const cell = grid[r][c];
@@ -212,7 +225,9 @@ export default function App() {
     }
 
     if (sel === null) return;
-    if (!bfs(grid, sel, [r, c])) { setSel(null); return; }
+    
+    const path = findPathBFS(grid, sel, [r, c]);
+    if (!path) { setSel(null); return; }
 
     setBusy(true);
     setSel(null);
@@ -220,62 +235,85 @@ export default function App() {
     setHintSearched(false);
 
     const color = grid[sel[0]][sel[1]]!;
-    const g2 = grid.map(row => [...row]);
-    g2[sel[0]][sel[1]] = null;
-    g2[r][c] = color;
+    
+    // Пошаговый запуск движения шарика по клеткам
+    let currentStep = 0;
+    let currentGrid = grid.map(row => [...row]);
+    
+    const moveInterval = setInterval(() => {
+      const [prevR, prevC] = path[currentStep];
+      currentStep++;
+      const [nextR, nextC] = path[currentStep];
 
-    const removed = findLines(g2, r, c);
-    setGrid(g2);
-    setPop(new Set([key(r, c)]));
-
-    if (removed.size > 0) {
-      const pts = scoreFor(removed.size);
+      currentGrid[prevR][prevC] = null;
+      currentGrid[nextR][nextC] = color;
+      
+      // Добавляем пройденную клетку в шлейф
+      const tId = Date.now() + Math.random();
+      setTrail(prev => [...prev, { pos: [prevR, prevC], colorIdx: color, id: tId }]);
       setTimeout(() => {
-        setPop(new Set());
-        setFlash(removed);
-        setTimeout(() => {
-          const g3 = g2.map(row => [...row]);
-          removed.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; });
-          setGrid(g3);
-          setFlash(new Set());
-          addScore(pts);
-          setBusy(false);
-        }, 420);
-      }, 300);
-    } else {
-      setTimeout(() => {
-        setPop(new Set());
-        const g3 = g2.map(row => [...row]);
-        const appeared = new Set<string>();
-        const curNext = nextRef.current;
+        setTrail(prev => prev.filter(t => t.id !== tId));
+      }, 400);
 
-        curNext.forEach(({ pos: [nr, nc], color: nc2 }) => {
-          if (g3[nr][nc] === null) { g3[nr][nc] = nc2; appeared.add(key(nr, nc)); }
-        });
+      setGrid(currentGrid.map(row => [...row]));
 
-        let bonus = 0;
-        const newBallRm = new Set<string>();
-        appeared.forEach(k => {
-          const [kr, kc] = parseKey(k);
-          if (g3[kr][kc] === null) return;
-          const rm = findLines(g3, kr, kc);
-          if (rm.size >= LINE) { bonus += scoreFor(rm.size); rm.forEach(rk => newBallRm.add(rk)); }
-        });
-        newBallRm.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; appeared.delete(k); });
+      // Когда шарик дошел до финиша
+      if (currentStep === path.length - 1) {
+        clearInterval(moveInterval);
+        
+        const removed = findLines(currentGrid, r, c);
+        setPop(new Set([key(r, c)]));
 
-        const emp = emptyPositions(g3);
-        const nn = makeNextBalls(g3);
-        setGrid(g3);
-        setNext(nn);
-        setPop(appeared);
-        if (bonus > 0) addScore(bonus);
-        if (emp.length === 0) { setOver(true); setBusy(false); return; }
-        setTimeout(() => { setPop(new Set()); setBusy(false); }, 420);
-      }, 280);
-    }
+        if (removed.size > 0) {
+          const pts = scoreFor(removed.size);
+          setTimeout(() => {
+            setPop(new Set());
+            setFlash(removed);
+            setTimeout(() => {
+              const g3 = currentGrid.map(row => [...row]);
+              removed.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; });
+              setGrid(g3);
+              setFlash(new Set());
+              addScore(pts);
+              setBusy(false);
+            }, 420);
+          }, 300);
+        } else {
+          setTimeout(() => {
+            setPop(new Set());
+            const g3 = currentGrid.map(row => [...row]);
+            const appeared = new Set<string>();
+            const curNext = nextRef.current;
+
+            curNext.forEach(({ pos: [nr, nc], color: nc2 }) => {
+              if (g3[nr][nc] === null) { g3[nr][nc] = nc2; appeared.add(key(nr, nc)); }
+            });
+
+            let bonus = 0;
+            const newBallRm = new Set<string>();
+            appeared.forEach(k => {
+              const [kr, kc] = parseKey(k);
+              if (g3[kr][kc] === null) return;
+              const rm = findLines(g3, kr, kc);
+              if (rm.size >= LINE) { bonus += scoreFor(rm.size); rm.forEach(rk => newBallRm.add(rk)); }
+            });
+            newBallRm.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; appeared.delete(k); });
+
+            const emp = emptyPositions(g3);
+            const nn = makeNextBalls(g3);
+            setGrid(g3);
+            setNext(nn);
+            setPop(appeared);
+            if (bonus > 0) addScore(bonus);
+            if (emp.length === 0) { setOver(true); setBusy(false); return; }
+            setTimeout(() => { setPop(new Set()); setBusy(false); }, 420);
+          }, 280);
+        }
+      }
+    }, 60); // Скорость шага (60мс на клетку)
+
   }, [grid, sel, over, busy, addScore]);
 
-  // ── AI Hint ──
   const requestHint = useCallback(() => {
     if (busy || hintLoading || over) return;
     setHintLoading(true);
@@ -289,7 +327,6 @@ export default function App() {
     }, 30);
   }, [grid, busy, hintLoading, over]);
 
-  // ── Derived cell states ──
   const isFlash = (r: number, c: number) => flash.has(key(r, c));
   const isPop = (r: number, c: number) => pop.has(key(r, c));
   const isSel = (r: number, c: number) => !!sel && sel[0] === r && sel[1] === c;
@@ -322,6 +359,10 @@ export default function App() {
           0%,100% { transform: scale(1); filter: brightness(1.1); }
           50%      { transform: scale(1.14); filter: brightness(1.6); }
         }
+        @keyframes ball-trail {
+          0% { transform: scale(0.8); opacity: 0.5; filter: blur(0.5px); }
+          100% { transform: scale(0.2); opacity: 0; filter: blur(2px); }
+        }
         @keyframes hint-glow {
           0%,100% { opacity: 0.55; }
           50%      { opacity: 1; }
@@ -339,6 +380,10 @@ export default function App() {
           50%      { box-shadow: 0 0 60px #1a4a8833, 0 25px 60px rgba(0,0,0,0.7); }
         }
         .cell-hover:hover { background: #1e3a5f44 !important; }
+        .ball-trail {
+          animation: ball-trail 0.4s ease-out forwards;
+          pointer-events: none;
+        }
         button:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-1px); }
         button { transition: all 0.18s; }
       `}</style>
@@ -404,6 +449,7 @@ export default function App() {
             const flashing = isFlash(r, c);
             const popping = isPop(r, c);
             const ghost = !cell ? nextGhost(r, c) : null;
+            const trailItem = trail.find(t => t.pos[0] === r && t.pos[1] === c);
             const hFrom = isHintFrom(r, c);
             const hTo = isHintTo(r, c);
 
@@ -423,25 +469,27 @@ export default function App() {
                   cursor: cell !== null ? 'pointer' : sel !== null ? 'pointer' : 'default',
                   position: 'relative',
                   transition: 'all 0.22s ease-in-out',
-                  
-                 // НАСТРОЙКА НЕОНОВОЙ РЕШЕТКИ ПОЛЯ:
                   border: selected
                     ? `2px solid ${PALETTE[cell!].h}88`
                     : hFrom ? '2px solid #f59e0b66'
                     : hTo ? '2px solid #22c55e66'
                     : '1px solid rgba(6, 182, 212, 0.25)',
-                  
-                  // Легкое внутреннее неоновое свечение
                   boxShadow: selected 
                     ? `inset 0 0 12px ${PALETTE[cell!].h}33` 
                     : 'inset 0 0 4px rgba(6, 182, 212, 0.08)',
                 }}
               >
-            
                 {/* Ghost preview of next ball */}
                 {ghost && !cell && (
                   <div style={{ opacity: 0.35, pointerEvents: 'none' }}>
                     <BallEl colorIdx={ghost.color} size={CELL * 0.52} />
+                  </div>
+                )}
+
+                {/* Trail ghost */}
+                {trailItem && (
+                  <div className="ball-trail" style={{ position: 'absolute', pointerEvents: 'none', zIndex: 10 }}>
+                    <BallEl colorIdx={trailItem.colorIdx} size={CELL * 0.65} anim="trail" />
                   </div>
                 )}
 
@@ -550,7 +598,7 @@ export default function App() {
             maxWidth: 340, width: '90%',
             boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 18 }}>
+            <div style={{ display: 'center', justifyContent: 'center', gap: 6, marginBottom: 18 }}>
               {PALETTE.slice(0, 5).map((p, i) => (
                 <div key={i} style={{
                   width: 14, height: 14, borderRadius: '50%',
