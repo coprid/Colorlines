@@ -7,14 +7,15 @@ const SPAWN = 3;      // balls added per turn
 const INIT = 5;       // initial balls on board
 
 const PALETTE = [
-  { h: '#ef4444', l: '#fecaca', d: '#7f1d1d', name: 'Red' },
-  { h: '#3b82f6', l: '#bfdbfe', d: '#1e3a8a', name: 'Blue' },
-  { h: '#22c55e', l: '#bbf7d0', d: '#14532d', name: 'Green' },
-  { h: '#facc15', l: '#fef08a', d: '#713f12', name: 'Желтый' },
-  { h: '#ec4899', l: '#fbcfe8', d: '#831843', name: 'Pink' },
-  { h: '#06b6d4', l: '#a5f3fc', d: '#164e63', name: 'Cyan' },
-  { h: '#f97316', l: '#fed7aa', d: '#7c2d12', name: 'Orange' },
+  { h: '#ff2200', l: '#ff9980', d: '#800b00', name: 'Red' },        // Алый
+  { h: '#00f0ff', l: '#b3f7ff', d: '#004c80', name: 'Cyan' },       // Бирюзовый
+  { h: '#39ff14', l: '#d8ffb3', d: '#0f4d00', name: 'Green' },      // Лайм
+  { h: '#ff66cc', l: '#ffccee', d: '#990066', name: 'Pink' },       // Нежно-розовый
+  { h: '#ff9900', l: '#ffe0b3', d: '#663d00', name: 'Orange' },     // Оранжевый
+  { h: '#9d4edd', l: '#e0c3fc', d: '#3c096c', name: 'Purple' },     // Фиолетовый
+  { h: '#ffea00', l: '#fffae6', d: '#807500', name: 'Желтый' },     // Желтый
 ];
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Cell = number | null;
@@ -497,7 +498,7 @@ export default function App() {
                 {cell !== null && (
                   <BallEl
                     colorIdx={cell}
-                    size={CELL * 0.76}
+                    size={CELL * 0.88}
                     selected={selected}
                     anim={flashing ? 'pop-out' : popping ? 'pop-in' : selected ? 'pulse' : undefined}
                   />
