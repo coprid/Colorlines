@@ -99,30 +99,65 @@ function makeNextBalls(grid: Grid): NextBall[] {
   const empty = [...emptyPositions(grid)].sort(() => Math.random() - 0.5);
   return empty.slice(0, Math.min(SPAWN, empty.length)).map(pos => ({ pos, color: rndColor() }));
 }
-
 function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
   // Вспомогательная функция для оценки веса (силы) шара конкретного цвета в определенной точке.
-  // Она считает, насколько длинные цепочки образуются вокруг этой координаты.
   const evaluatePositionWeight = (g: Grid, r: number, c: number, color: number): number => {
-    let totalWeight = 0;
+    let maxWeight = 0; // Ищем строго ОДНО лучшее направление, а не складываем всё в кучу
     const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
     
     for (const [dr, dc] of directions) {
-      let matches = 0;
-      // Проверяем в обе стороны от точки
+      let matches = 0;      // Шары нашего цвета подряд
+      let potential = 1;    // Всего доступных клеток в этой линии для нашего цвета (включая текущую)
+
+      // Считаем реальные совпадения и одновременно оцениваем потенциал линии
       for (const s of [1, -1]) {
         let nr = r + s * dr, nc = c + s * dc;
-        while (nr >= 0 && nr < G && nc >= 0 && nc < G && g[nr][nc] === color) {
-          matches++;
-          nr += s * dr; nc += s * dc;
+        let foundObstacle = false;
+
+        while (nr >= 0 && nr < G && nc >= 0 && nc < G) {
+          const cell = g[nr][nc];
+          
+          if (cell === color) {
+            // Если препятствий еще не было, это идет в активные совпадения
+            if (!foundObstacle) {
+              matches++;
+            }
+            potential++;
+          } else if (cell === null) {
+            // Пустая клетка увеличивает наш потенциал достроить линию в будущем
+            potential++;
+            // Но непрерывный ряд нашего цвета на этом прерывается
+            foundObstacle = true;
+          } else {
+            // Чужой шар — это жесткий тупик, линия здесь обрывается навсегда
+            break;
+          }
+          
+          nr += s * dr; 
+          nc += s * dc;
         }
       }
-      if (matches > 0) {
-        // Используем квадратичный вес, чтобы более длинные линии ценились в разы сильнее
-        totalWeight += Math.pow(matches + 1, 2);
+
+      // КРИТИЧЕСКИЙ ФИЛЬТР: Если в этой линии физически невозможно собрать 5 шаров (potential < 5),
+      // мы полностью игнорируем это направление! Оно бесперспективно.
+      if (potential >= LINE && matches > 0) {
+        // Базовый вес (квадрат от количества шаров в линии)
+        let directionWeight = Math.pow(matches + 1, 2);
+
+        // МНОЖИТЕЛИ ДЛИНЫ: даем жесткий приоритет более длинным цепочкам!
+        if (matches === 2) {
+          directionWeight *= 3.0; // Создание линии из 3 шаров получает огромный буст
+        } else if (matches === 3) {
+          directionWeight *= 8.0; // Создание линии из 4 шаров — абсолютный приоритет перед мелочью
+        }
+
+        // Выбираем только самое сильное направление для этой клетки
+        if (directionWeight > maxWeight) {
+          maxWeight = directionWeight;
+        }
       }
     }
-    return totalWeight;
+    return maxWeight;
   };
 
   // ==========================================
@@ -163,7 +198,7 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
       const color = grid[r][c];
       if (color === null) continue;
 
-      // Оцениваем, насколько этот шарик был полезен на своем ТЕКУЩЕМ месте
+      // Оцениваем полезность шара на текущем месте (с учетом дальновидного потенциала)
       const oldWeight = evaluatePositionWeight(grid, r, c, color);
 
       for (let tr = 0; tr < G; tr++) {
@@ -171,18 +206,16 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
           if (grid[tr][tc] !== null || (r === tr && c === tc)) continue;
           if (!findPathBFS(grid, [r, c], [tr, tc])) continue;
 
-          // Гипотетически совершаем ход
+          // Гипотетический ход
           const t = grid.map(row => [...row]);
           t[tr][tc] = color;
           t[r][c] = null;
 
-          // Оцениваем пользу шарика на НОВОМ месте (на временной сетке 't')
+          // Оцениваем пользу на новом месте
           const newWeight = evaluatePositionWeight(t, tr, tc, color);
-
-          // Считаем чистый выигрыш от этого действия
           const netGain = newWeight - oldWeight;
 
-          // Нам интересны только ходы, которые РЕАЛЬНО улучшают позицию (netGain > 0)
+          // Нам интересны только перспективные ходы (где netGain > 0)
           if (netGain > 0) {
             if (!bestStrategic || netGain > bestStrategic.netGain) {
               bestStrategic = { from: [r, c], to: [tr, tc], netGain };
@@ -197,9 +230,9 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
     return { from: bestStrategic.from, to: bestStrategic.to };
   }
 
-  // Если нет ни выигрышных, ни улучшающих ходов (например, все шары изолированы и путей нет)
   return null;
 }
+
 
 // ── САМ КАСТОМНЫЙ ХУК ─────────────────────────────────────────────────────────
 export function useChromaline() {
@@ -313,22 +346,42 @@ export function useChromaline() {
               setBusy(false);
             }, 420);
           }, 300);
-        } else {
+    } else {
           setTimeout(() => {
             setPop(new Set());
             const g3 = currentGrid.map(row => [...row]);
             const appeared = new Set<string>();
             const curNext = nextRef.current;
 
-            // 1. Спавним шары из прогноза на пустые места
-            curNext.forEach(({ pos: [nr, nc], color: nc2 }) => {
-              if (g3[nr][nc] === null) { 
-                g3[nr][nc] = nc2; 
-                appeared.add(key(nr, nc)); 
+            // Сначала соберем все доступные пустые места на поле ДО спавна
+            let availableEmpty = emptyPositions(g3);
+
+            curNext.forEach(({ pos: originalPos, color: nc2 }) => {
+              const [or, oc] = originalPos;
+              
+              // Если оригинальное место свободно — ставим туда шар
+              if (g3[or][oc] === null) {
+                g3[or][oc] = nc2;
+                appeared.add(key(or, oc));
+                // Удаляем эту клетку из списка доступных пустых
+                availableEmpty = availableEmpty.filter(([er, ec]) => !(er === or && ec === oc));
+              } 
+              // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: если оригинальное место занято игроком,
+              // но у нас есть другие пустые клетки — спавним шар туда!
+              else if (availableEmpty.length > 0) {
+                // Берем случайное пустое место
+                const randomIndex = Math.floor(Math.random() * availableEmpty.length);
+                const [nr, nc] = availableEmpty[randomIndex];
+                
+                g3[nr][nc] = nc2;
+                appeared.add(key(nr, nc));
+                
+                // Удаляем использованную клетку из списка доступных
+                availableEmpty.splice(randomIndex, 1);
               }
             });
 
-            // 2. Проверяем, не собрались ли линии от новых шаров
+            // Проверяем, не собрались ли линии от появившихся шаров
             let bonus = 0;
             const newBallRm = new Set<string>();
             appeared.forEach(k => {
@@ -341,17 +394,16 @@ export function useChromaline() {
               }
             });
             
-            // Удаляем сгоревшие линии новых шаров
             newBallRm.forEach(k => { 
               const [kr, kc] = parseKey(k); 
               g3[kr][kc] = null; 
               appeared.delete(k); 
             });
 
-            // 3. Считаем свободные места ПОСЛЕ всех сжиганий
+            // Считаем пустые клетки ПОСЛЕ того, как все шары выставились и сгорели
             const emp = emptyPositions(g3);
             
-            // 4. Генерируем прогноз на следующий ход на основе ОСТАВШИХСЯ пустых мест
+            // Генерируем новый прогноз на следующий ход
             const nn = makeNextBalls(g3);
             
             setGrid(g3);
@@ -360,13 +412,11 @@ export function useChromaline() {
             
             if (bonus > 0) addScore(bonus);
 
-            // 5. КРИТИЧЕСКАЯ ПРОВЕРКА: Если пустых клеток нет ИЛИ осталась всего одна клетка, 
-            // при этом у нас нет следующего анонса шаров (длина nn равна 0), наступает Game Over.
-            // Также, если на поле 0 пустых мест, то играть физически невозможно.
-            if (emp.length === 0 || (emp.length === 1 && nn.length === 0)) { 
-              setOver(true); 
-              setBusy(false); 
-              return; 
+            // Если пустых мест на поле больше нет — игра гарантированно окончена
+            if (emp.length === 0) {
+              setOver(true);
+              setBusy(false);
+              return;
             }
 
             setTimeout(() => { 
