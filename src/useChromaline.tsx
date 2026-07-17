@@ -320,28 +320,59 @@ export function useChromaline() {
             const appeared = new Set<string>();
             const curNext = nextRef.current;
 
+            // 1. Спавним шары из прогноза на пустые места
             curNext.forEach(({ pos: [nr, nc], color: nc2 }) => {
-              if (g3[nr][nc] === null) { g3[nr][nc] = nc2; appeared.add(key(nr, nc)); }
+              if (g3[nr][nc] === null) { 
+                g3[nr][nc] = nc2; 
+                appeared.add(key(nr, nc)); 
+              }
             });
 
+            // 2. Проверяем, не собрались ли линии от новых шаров
             let bonus = 0;
             const newBallRm = new Set<string>();
             appeared.forEach(k => {
               const [kr, kc] = parseKey(k);
               if (g3[kr][kc] === null) return;
               const rm = findLines(g3, kr, kc);
-              if (rm.size >= LINE) { bonus += scoreFor(rm.size); rm.forEach(rk => newBallRm.add(rk)); }
+              if (rm.size >= LINE) { 
+                bonus += scoreFor(rm.size); 
+                rm.forEach(rk => newBallRm.add(rk)); 
+              }
             });
-            newBallRm.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; appeared.delete(k); });
+            
+            // Удаляем сгоревшие линии новых шаров
+            newBallRm.forEach(k => { 
+              const [kr, kc] = parseKey(k); 
+              g3[kr][kc] = null; 
+              appeared.delete(k); 
+            });
 
+            // 3. Считаем свободные места ПОСЛЕ всех сжиганий
             const emp = emptyPositions(g3);
+            
+            // 4. Генерируем прогноз на следующий ход на основе ОСТАВШИХСЯ пустых мест
             const nn = makeNextBalls(g3);
+            
             setGrid(g3);
             setNext(nn);
             setPop(appeared);
+            
             if (bonus > 0) addScore(bonus);
-            if (emp.length === 0) { setOver(true); setBusy(false); return; }
-            setTimeout(() => { setPop(new Set()); setBusy(false); }, 420);
+
+            // 5. КРИТИЧЕСКАЯ ПРОВЕРКА: Если пустых клеток нет ИЛИ осталась всего одна клетка, 
+            // при этом у нас нет следующего анонса шаров (длина nn равна 0), наступает Game Over.
+            // Также, если на поле 0 пустых мест, то играть физически невозможно.
+            if (emp.length === 0 || (emp.length === 1 && nn.length === 0)) { 
+              setOver(true); 
+              setBusy(false); 
+              return; 
+            }
+
+            setTimeout(() => { 
+              setPop(new Set()); 
+              setBusy(false); 
+            }, 420);
           }, 280);
         }
       }
