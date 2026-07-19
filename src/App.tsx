@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { BallEl, useChromaline, PALETTE } from './useChromaline';
 
 const CELL = 56;
@@ -7,7 +8,13 @@ const G = 9;
 const key = (r: number, c: number) => `${r},${c}`;
 
 export default function App() {
+  const [soundOn, setSoundOn] = useState(() => {
+  const saved = localStorage.getItem('chromaline_sound');
+    return saved !== null ? saved === 'true' : true;
+  });
+
   // Подключаем наш новый "капот" — забираем все состояния и функции из хука!
+
   const {
     grid,
     sel,
@@ -27,7 +34,7 @@ export default function App() {
     requestHint,
     undo,       // <-- Добавили функцию отмены хода
     canUndo     // <-- Добавили проверку доступности истории
-  } = useChromaline();
+  } = useChromaline(soundOn);
 
   const isFlash = (r: number, c: number) => flash.has(key(r, c));
   const isPop = (r: number, c: number) => pop.has(key(r, c));
@@ -35,7 +42,12 @@ export default function App() {
   const isHintFrom = (r: number, c: number) => !!hint && hint.from[0] === r && hint.from[1] === c;
   const isHintTo = (r: number, c: number) => !!hint && hint.to[0] === r && hint.to[1] === c;
   const nextGhost = (r: number, c: number) => next.find(b => b.pos[0] === r && b.pos[1] === c);
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  useEffect(() => {
+    localStorage.setItem('chromaline_sound', String(soundOn));
+  }, [soundOn]);
   return (
     <div style={{
       minHeight: '100vh',
@@ -101,8 +113,75 @@ export default function App() {
         </p>
       </div>
 
-      {/* Score bar */}
+     {/* Score bar */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        
+        {/* 1. Кнопка Звук */}
+        <button
+          onClick={() => setSoundOn(!soundOn)}
+          style={{
+            background: 'linear-gradient(145deg, #0d1f36, #091829)',
+            border: soundOn ? '1px solid #38bdf8' : '1px solid #1e293b',
+            borderRadius: 14,
+            padding: '12px 22px',
+            minWidth: 54,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            boxShadow: soundOn ? '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.2)' : '0 4px 20px rgba(0,0,0,0.4)',
+            opacity: soundOn ? 1 : 0.5
+          }}
+          title={soundOn ? 'Выключить звук' : 'Включить звук'}
+        >
+          {soundOn ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }}>
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d4a68" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          )}
+        </button>
+
+        {/* 2. Кнопка Настройки */}
+        <button
+          onClick={() => setIsMenuOpen(true)}
+          style={{
+            background: 'linear-gradient(145deg, #0d1f36, #091829)',
+            border: '1px solid #1e293b',
+            borderRadius: 14,
+            padding: '12px 22px',
+            minWidth: 54,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.border = '1px solid #38bdf8';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.border = '1px solid #1e293b';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
+          }}
+          title="Настройки и инструкция"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }}>
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+
+        {/* Твой оригинальный маппинг счета */}
         {[{ label: 'SCORE', val: score, accent: '#38bdf8' }, { label: 'BEST', val: hi, accent: '#f59e0b' }].map(({ label, val, accent }) => (
           <div key={label} style={{
             background: 'linear-gradient(145deg, #0d1f36, #091829)',
@@ -115,7 +194,6 @@ export default function App() {
           </div>
         ))}
       </div>
-
       {/* Next balls preview */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, height: 34 }}>
         <span style={{ color: '#2d4a68', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Next</span>

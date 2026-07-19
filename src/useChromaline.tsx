@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
+import { audioManager } from './audioManager';
 // ── Константы ─────────────────────────────────────────────────────────────────
 const G = 9;          // grid size
 const LINE = 5;       // balls needed in a line
@@ -11,7 +12,7 @@ export const PALETTE = [
   { h: '#00f0ff', l: '#b3f7ff', d: '#004c80', name: 'Cyan' },
   { h: '#39ff14', l: '#d8ffb3', d: '#0f4d00', name: 'Green' },
   { h: '#ff66cc', l: '#ffccee', d: '#990066', name: 'Pink' },
-  { h: '#ff9900', l: '#ffe0b3', d: '#663d00', name: 'Orange' },
+  { h: '#ff7700', l: '#ffcc99', d: '#803b00', name: 'Orange' },
   { h: '#9d4edd', l: '#e0c3fc', d: '#3c096c', name: 'Purple' },
   { h: '#ffea00', l: '#fffae6', d: '#807500', name: 'Желтый' },
 ];
@@ -214,7 +215,7 @@ function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
 }
 
 // ── САМ КАСТОМНЫЙ ХУК ─────────────────────────────────────────────────────────
-export function useChromaline() {
+export function useChromaline(soundOn: boolean) {
   const [grid, setGrid] = useState<Grid>(emptyGrid);
   const [sel, setSel] = useState<Pos | null>(null);
   const [next, setNext] = useState<NextBall[]>([]);
@@ -278,6 +279,8 @@ export function useChromaline() {
     const cell = grid[r][c];
 
     if (cell !== null) {
+      audioManager.playSelect(soundOn);
+
       setSel(p => (p && p[0] === r && p[1] === c) ? null : [r, c]);
       setHint(null);
       setHintSearched(false);
@@ -287,13 +290,13 @@ export function useChromaline() {
     if (sel === null) return;
     
     const path = findPathBFS(grid, sel, [r, c]);
-    if (!path) { setSel(null); return; }
+    if (!path) {audioManager.playError(soundOn); setSel(null); return; }
 
     // ЗАПИСЬ ИСТОРИИ: Фиксируем состояние ДО начала движения
     setHistoryGrid(grid.map(row => [...row]));
     setHistoryScore(score);
     setHistoryNext([...nextRef.current]);
-
+  audioManager.playMove(soundOn, path.length * 0.1);
     setBusy(true);
     setSel(null);
     setHint(null);
@@ -324,9 +327,9 @@ export function useChromaline() {
         clearInterval(moveInterval);
         
         const removed = findLines(currentGrid, r, c);
-        setPop(new Set([key(r, c)]));
-
+      
         if (removed.size > 0) {
+          audioManager.playMatch(soundOn);
           const pts = scoreFor(removed.size);
           setTimeout(() => {
             setPop(new Set());
@@ -409,7 +412,7 @@ export function useChromaline() {
       }
     }, 60);
 
-  }, [grid, sel, over, busy, addScore]);
+  }, [grid, sel, over, busy, addScore, soundOn]);
 
   const requestHint = useCallback(() => {
     if (busy || hintLoading || over) return;
