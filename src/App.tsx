@@ -24,7 +24,9 @@ export default function App() {
     trail,
     onCell,
     newGame,
-    requestHint
+    requestHint,
+    undo,       // <-- Добавили функцию отмены хода
+    canUndo     // <-- Добавили проверку доступности истории
   } = useChromaline();
 
   const isFlash = (r: number, c: number) => flash.has(key(r, c));
@@ -212,34 +214,71 @@ export default function App() {
         )}
       </div>
 
-      {/* Controls */}
-      <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center' }}>
+{/* Controls */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Кнопка AI Hint */}
         <button
           onClick={requestHint}
           disabled={busy || hintLoading || over}
           style={{
             background: hintLoading
               ? 'linear-gradient(135deg, #0d1f36, #0d1f36)'
-              : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
-            border: '1px solid #2563eb44',
-            borderRadius: 11, color: '#60a5fa',
-            padding: '10px 22px', cursor: busy || hintLoading || over ? 'not-allowed' : 'pointer',
+              : (busy || hintLoading || over) 
+                ? 'linear-gradient(135deg, #111827, #1f2937)' 
+                : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+            border: (busy || hintLoading || over) ? '1px solid #374151' : '1px solid #2563eb44',
+            borderRadius: 11, 
+            color: (busy || hintLoading || over) ? '#6b7280' : '#60a5fa',
+            padding: '10px 22px', 
+            cursor: (busy || hintLoading || over) ? 'not-allowed' : 'pointer',
             fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.05em',
-            opacity: busy || hintLoading || over ? 0.45 : 1,
+            opacity: (busy || hintLoading || over) ? 0.45 : 1,
             boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
           }}
         >
           {hintLoading ? '· · ·' : hint ? 'New Hint' : '✦ AI Hint'}
         </button>
 
+        {/* Кнопка Undo — теперь в обычном состоянии точь-в-точь как AI Hint */}
+        <button
+          onClick={undo}
+          disabled={busy || !canUndo}
+          style={{
+            background: (busy || !canUndo)
+              ? 'linear-gradient(135deg, #111827, #1f2937)' // Тусклый стиль, если нельзя отменить
+              : 'linear-gradient(135deg, #0d2d55, #1a3a6e)', // Яркий синий, если ход есть!
+            border: (busy || !canUndo) ? '1px solid #374151' : '1px solid #2563eb44',
+            borderRadius: 11,
+            color: (busy || !canUndo) ? '#6b7280' : '#60a5fa',
+            padding: '10px 22px',
+            cursor: (busy || !canUndo) ? 'not-allowed' : 'pointer',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            opacity: (busy || !canUndo) ? 0.45 : 1,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+          }}
+        >
+          Undo
+        </button>
+
+        {/* Кнопка New Game — теперь ТОЖЕ яркая неоновая, а тускнеет только во время анимаций (busy) */}
         <button
           onClick={newGame}
+          disabled={busy}
           style={{
-            background: 'linear-gradient(135deg, #111827, #1f2937)',
-            border: '1px solid #374151',
-            borderRadius: 11, color: '#6b7280',
-            padding: '10px 22px', cursor: 'pointer',
-            fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.05em',
+            background: busy 
+              ? 'linear-gradient(135deg, #111827, #1f2937)' 
+              : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+            border: busy ? '1px solid #374151' : '1px solid #2563eb44',
+            borderRadius: 11, 
+            color: busy ? '#6b7280' : '#60a5fa',
+            padding: '10px 22px', 
+            cursor: busy ? 'not-allowed' : 'pointer',
+            fontSize: '0.82rem', 
+            fontWeight: 700, 
+            letterSpacing: '0.05em',
+            opacity: busy ? 0.45 : 1,
             boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
           }}
         >
