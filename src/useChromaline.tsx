@@ -103,52 +103,49 @@ function makeNextBalls(grid: Grid): NextBall[] {
 
 function aiHint(grid: Grid): { from: Pos; to: Pos } | null {
   const evaluatePositionWeight = (g: Grid, r: number, c: number, color: number): number => {
-    let maxWeight = 0;
-    const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
-    
-    for (const [dr, dc] of directions) {
-      let matches = 0;
-      let potential = 1;
+  let maxWeight = 0;
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  
+  for (const [dr, dc] of directions) {
+    let matches = 1;  // ← Сам шар, который мы поставим
+    let potential = 1; // ← Сам шар
 
-      for (const s of [1, -1]) {
-        let nr = r + s * dr, nc = c + s * dc;
-        let foundObstacle = false;
+    for (const s of [1, -1]) {
+      let nr = r + s * dr, nc = c + s * dc;
+      let gapCount = 0;  // ← Счётчик пустых подряд
 
-        while (nr >= 0 && nr < G && nc >= 0 && nc < G) {
-          const cell = g[nr][nc];
-          
-          if (cell === color) {
-            if (!foundObstacle) {
-              matches++;
-            }
-            potential++;
-          } else if (cell === null) {
-            potential++;
-            foundObstacle = true;
-          } else {
-            break;
-          }
-          
-          nr += s * dr; 
-          nc += s * dc;
+      while (nr >= 0 && nr < G && nc >= 0 && nc < G) {
+        const cell = g[nr][nc];
+        
+        if (cell === color) {
+          matches++;          // ← Считаем ВСЕ шары этого цвета
+          potential++;
+          gapCount = 0;       // ← Сбрасываем пропуски
+        } else if (cell === null) {
+          potential++;
+          gapCount++;
+          if (gapCount > 1) break;  // ← Больше 1 пустой подряд — стоп
+        } else {
+          break;  // ← Другой цвет — стоп
         }
-      }
-
-      if (potential >= LINE && matches > 0) {
-        let directionWeight = Math.pow(matches + 1, 2);
-
-        if (matches === 2) {
-          directionWeight *= 3.0;
-        } else if (matches === 3) {
-          directionWeight *= 8.0;
-        }
-
-        if (directionWeight > maxWeight) {
-          maxWeight = directionWeight;
-        }
+        
+        nr += s * dr; 
+        nc += s * dc;
       }
     }
-    return maxWeight;
+
+    if (potential >= LINE && matches > 1) {  // ← matches > 1 (сам шар + хотя бы 1)
+      let directionWeight = Math.pow(matches, 2);  // ← matches вместо matches + 1
+
+      if (matches === 3) directionWeight *= 3.0;
+      else if (matches === 4) directionWeight *= 8.0;
+
+      if (directionWeight > maxWeight) {
+        maxWeight = directionWeight;
+      }
+    }
+  }
+  return maxWeight;
   };
 
   let bestImmediate: { from: Pos; to: Pos; score: number } | null = null;
@@ -400,27 +397,38 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
               appeared.delete(k); 
             });
 
-            const emp = emptyPositions(g3);
-            const nn = makeNextBalls(g3);
-            
-            setGrid(g3);
-            setNext(nn);
-            setPop(appeared);
-            
-            if (bonus > 0) addScore(bonus);
+               // ← НОВОЕ: если новые шары собрали линию — НЕ спавним следующие шары
+    if (bonus > 0) {
+      addScore(bonus);
+      setGrid(g3);
+      setPop(appeared);
+      
+      const t4 = setTimeout(() => {
+        setPop(new Set());
+        setBusy(false);
+      }, 420);
+      timeoutsRef.current.push(t4);
+    } else {
+      const emp = emptyPositions(g3);
+      const nn = makeNextBalls(g3);
+      
+      setGrid(g3);
+      setNext(nn);
+      setPop(appeared);
+      
+      if (emp.length === 0) {
+        setOver(true);
+        setBusy(false);
+        return;
+      }
 
-            if (emp.length === 0) {
-              setOver(true);
-              setBusy(false);
-              return;
-            }
-
-            const t4 = setTimeout(() => { 
-              setPop(new Set()); 
-              setBusy(false); 
-            }, 420);
-            timeoutsRef.current.push(t4);
-          }, 280);
+      const t4 = setTimeout(() => {
+        setPop(new Set());
+        setBusy(false);
+      }, 420);
+      timeoutsRef.current.push(t4);
+    }
+  }, 280);
           timeoutsRef.current.push(t3);
         }
       }
