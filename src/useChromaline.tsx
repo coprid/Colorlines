@@ -234,7 +234,8 @@ export function useChromaline(soundOn: boolean) {
   const [historyGrid, setHistoryGrid] = useState<Grid | null>(null);
   const [historyScore, setHistoryScore] = useState<number | null>(null);
   const [historyNext, setHistoryNext] = useState<NextBall[] | null>(null);
-
+const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const nextRef = useRef(next);
   useEffect(() => { nextRef.current = next; }, [next]);
 
@@ -247,8 +248,16 @@ export function useChromaline(soundOn: boolean) {
       return ns;
     });
   }, []);
-
+  const clearAllTimers = useCallback(() => {
+    if (moveIntervalRef.current) {
+      clearInterval(moveIntervalRef.current);
+      moveIntervalRef.current = null;
+    }
+    timeoutsRef.current.forEach(id => clearTimeout(id));
+    timeoutsRef.current = [];
+  }, []);
   const newGame = useCallback(() => {
+    clearAllTimers();
     const g = emptyGrid();
     const empty = [...emptyPositions(g)].sort(() => Math.random() - 0.5);
     for (let i = 0; i < Math.min(INIT, empty.length); i++)
@@ -270,7 +279,7 @@ export function useChromaline(soundOn: boolean) {
     setHistoryGrid(null);
     setHistoryScore(null);
     setHistoryNext(null);
-  }, []);
+  }, [clearAllTimers]);
 
   useEffect(() => { newGame(); }, [newGame]);
 
@@ -307,7 +316,7 @@ export function useChromaline(soundOn: boolean) {
     let currentStep = 0;
     let currentGrid = grid.map(row => [...row]);
     
-    const moveInterval = setInterval(() => {
+    moveIntervalRef.current = setInterval(() => {
       const [prevR, prevC] = path[currentStep];
       currentStep++;
       const [nextR, nextC] = path[currentStep];
@@ -317,24 +326,25 @@ export function useChromaline(soundOn: boolean) {
       
       const tId = Date.now() + Math.random();
       setTrail(prev => [...prev, { pos: [prevR, prevC], colorIdx: color, id: tId }]);
-      setTimeout(() => {
+      const trailTimeout = setTimeout(() => {
         setTrail(prev => prev.filter(t => t.id !== tId));
       }, 400);
-
+     timeoutsRef.current.push(trailTimeout);
       setGrid(currentGrid.map(row => [...row]));
 
       if (currentStep === path.length - 1) {
-        clearInterval(moveInterval);
+        clearInterval(moveIntervalRef.current!);
+        moveIntervalRef.current = null;
         
         const removed = findLines(currentGrid, r, c);
       
         if (removed.size > 0) {
           audioManager.playMatch(soundOn);
           const pts = scoreFor(removed.size);
-          setTimeout(() => {
+          const t1 = setTimeout(() => {
             setPop(new Set());
             setFlash(removed);
-            setTimeout(() => {
+            const t2 = setTimeout(() => {
               const g3 = currentGrid.map(row => [...row]);
               removed.forEach(k => { const [kr, kc] = parseKey(k); g3[kr][kc] = null; });
               setGrid(g3);
@@ -342,9 +352,11 @@ export function useChromaline(soundOn: boolean) {
               addScore(pts);
               setBusy(false);
             }, 420);
+            timeoutsRef.current.push(t2);
           }, 300);
+          timeoutsRef.current.push(t1);
         } else {
-          setTimeout(() => {
+          const t3 = setTimeout(() => {
             setPop(new Set());
             const g3 = currentGrid.map(row => [...row]);
             const appeared = new Set<string>();
@@ -403,16 +415,18 @@ export function useChromaline(soundOn: boolean) {
               return;
             }
 
-            setTimeout(() => { 
+            const t4 = setTimeout(() => { 
               setPop(new Set()); 
               setBusy(false); 
             }, 420);
+            timeoutsRef.current.push(t4);
           }, 280);
+          timeoutsRef.current.push(t3);
         }
       }
     }, 60);
 
-  }, [grid, sel, over, busy, addScore, soundOn]);
+  }, [grid, sel, over, busy, addScore, soundOn, clearAllTimers]);
 
   const requestHint = useCallback(() => {
     if (busy || hintLoading || over) return;
@@ -430,7 +444,7 @@ export function useChromaline(soundOn: boolean) {
   // ФУНКЦИЯ UNDO: Откат на один ход назад
   const undo = useCallback(() => {
     if (busy || !historyGrid || historyScore === null || !historyNext) return;
-
+    clearAllTimers();
     setGrid(historyGrid);
     setScore(historyScore);
     setNext(historyNext);
@@ -448,7 +462,7 @@ export function useChromaline(soundOn: boolean) {
     setHistoryGrid(null);
     setHistoryScore(null);
     setHistoryNext(null);
-  }, [busy, historyGrid, historyScore, historyNext]);
+  }, [busy, historyGrid, historyScore, historyNext, clearAllTimers]);
 
   const canUndo = historyGrid !== null;
 

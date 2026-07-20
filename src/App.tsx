@@ -4,36 +4,17 @@ import { BallEl, useChromaline, PALETTE } from './useChromaline';
 const CELL = 56;
 const G = 9;
 
-// Простая функция-помощник для генерации строковых ключей ячеек
 const key = (r: number, c: number) => `${r},${c}`;
 
 export default function App() {
   const [soundOn, setSoundOn] = useState(() => {
-  const saved = localStorage.getItem('chromaline_sound');
+    const saved = localStorage.getItem('chromaline_sound');
     return saved !== null ? saved === 'true' : true;
   });
 
-  // Подключаем наш новый "капот" — забираем все состояния и функции из хука!
-
   const {
-    grid,
-    sel,
-    next,
-    score,
-    hi,
-    over,
-    hint,
-    hintSearched,
-    hintLoading,
-    busy,
-    flash,
-    pop,
-    trail,
-    onCell,
-    newGame,
-    requestHint,
-    undo,       // <-- Добавили функцию отмены хода
-    canUndo     // <-- Добавили проверку доступности истории
+    grid, sel, next, score, hi, over, hint, hintSearched, hintLoading, busy,
+    flash, pop, trail, onCell, newGame, requestHint, undo, canUndo
   } = useChromaline(soundOn);
 
   const isFlash = (r: number, c: number) => flash.has(key(r, c));
@@ -42,12 +23,13 @@ export default function App() {
   const isHintFrom = (r: number, c: number) => !!hint && hint.from[0] === r && hint.from[1] === c;
   const isHintTo = (r: number, c: number) => !!hint && hint.to[0] === r && hint.to[1] === c;
   const nextGhost = (r: number, c: number) => next.find(b => b.pos[0] === r && b.pos[1] === c);
-  
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('chromaline_sound', String(soundOn));
   }, [soundOn]);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -92,7 +74,7 @@ export default function App() {
           animation: ball-trail 0.4s ease-out forwards;
           pointer-events: none;
         }
-        button:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-1px); }
+        button:hover:not(:disabled) { filter: brightness(1.3); transform: translateY(-1px); }
         button { transition: all 0.18s; }
       `}</style>
 
@@ -108,20 +90,20 @@ export default function App() {
         }}>
           CHROMALINE
         </h1>
-        <p style={{ color: '#3b5278', fontSize: '0.68rem', letterSpacing: '0.35em', margin: '5px 0 0', textTransform: 'uppercase' }}>
+        <p style={{ color: '#5a8ab8', fontSize: '0.68rem', letterSpacing: '0.35em', margin: '5px 0 0', textTransform: 'uppercase' }}>
           Color Lines 3D · AI
         </p>
       </div>
 
-     {/* Score bar */}
+      {/* Score bar */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-        
-        {/* 1. Кнопка Звук */}
+
+        {/* 1. Кнопка Звук — оставляем rounded как сейчас */}
         <button
           onClick={() => setSoundOn(!soundOn)}
           style={{
             background: 'linear-gradient(145deg, #0d1f36, #091829)',
-            border: soundOn ? '1px solid #38bdf8' : '1px solid #1e293b',
+            border: '2px solid #38bdf8',
             borderRadius: 14,
             padding: '12px 22px',
             minWidth: 54,
@@ -129,8 +111,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            boxShadow: soundOn ? '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.2)' : '0 4px 20px rgba(0,0,0,0.4)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
             opacity: soundOn ? 1 : 0.5
           }}
           title={soundOn ? 'Выключить звук' : 'Включить звук'}
@@ -141,7 +122,7 @@ export default function App() {
               <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
             </svg>
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d4a68" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }}>
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
               <line x1="23" y1="9" x2="17" y2="15"></line>
               <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -149,29 +130,20 @@ export default function App() {
           )}
         </button>
 
-        {/* 2. Кнопка Настройки */}
+        {/* 2. Кнопка Настройки — форма как нижние, рамка как звук */}
         <button
           onClick={() => setIsMenuOpen(true)}
           style={{
             background: 'linear-gradient(145deg, #0d1f36, #091829)',
-            border: '1px solid #1e293b',
-            borderRadius: 14,
+            border: '2px solid #38bdf8',
+            borderRadius: 11,
             padding: '12px 22px',
             minWidth: 54,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.border = '1px solid #38bdf8';
-            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.border = '1px solid #1e293b';
-            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
           title="Настройки и инструкция"
         >
@@ -181,22 +153,26 @@ export default function App() {
           </svg>
         </button>
 
-        {/* Твой оригинальный маппинг счета */}
+        {/* SCORE / BEST — форма как нижние, рамка как звук */}
         {[{ label: 'SCORE', val: score, accent: '#38bdf8' }, { label: 'BEST', val: hi, accent: '#f59e0b' }].map(({ label, val, accent }) => (
           <div key={label} style={{
             background: 'linear-gradient(145deg, #0d1f36, #091829)',
-            border: `1px solid ${accent}22`,
-            borderRadius: 14, padding: '12px 22px', textAlign: 'center', minWidth: 108,
-            boxShadow: `0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 ${accent}11`,
+            border: '2px solid #38bdf8',
+            borderRadius: 11,
+            padding: '12px 22px',
+            textAlign: 'center',
+            minWidth: 108,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}>
-            <div style={{ color: '#2d4a68', fontSize: '0.62rem', letterSpacing: '0.25em', marginBottom: 3 }}>{label}</div>
+            <div style={{ color: '#6b9fd1', fontSize: '0.62rem', letterSpacing: '0.25em', marginBottom: 3 }}>{label}</div>
             <div style={{ color: accent, fontSize: '1.7rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{val}</div>
           </div>
         ))}
       </div>
+
       {/* Next balls preview */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, height: 34 }}>
-        <span style={{ color: '#2d4a68', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Next</span>
+        <span style={{ color: '#6b9fd1', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Next</span>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {next.map((b, i) => (
             <BallEl key={i} colorIdx={b.color} size={24} />
@@ -212,7 +188,8 @@ export default function App() {
         background: 'linear-gradient(145deg, #07121f, #050e1a)',
         borderRadius: 18,
         padding: 10,
-        border: '1px solid #0d2240',
+        border: '2px solid #1a4a88',
+        boxShadow: '0 0 30px #1a4a8866, 0 25px 60px rgba(0,0,0,0.7)',
         animation: 'grid-glow 4s ease-in-out infinite',
       }}>
         {Array.from({ length: G }, (_, r) =>
@@ -244,30 +221,27 @@ export default function App() {
                   position: 'relative',
                   transition: 'all 0.22s ease-in-out',
                   border: selected
-                    ? `2px solid ${PALETTE[cell!].h}88`
-                    : hFrom ? '2px solid #f59e0b66'
-                    : hTo ? '2px solid #22c55e66'
-                    : '1px solid rgba(6, 182, 212, 0.25)',
-                  boxShadow: selected 
-                    ? `inset 0 0 12px ${PALETTE[cell!].h}33` 
+                    ? `2px solid ${PALETTE[cell!].h}`
+                    : hFrom ? '2px solid #f59e0b'
+                    : hTo ? '2px solid #22c55e'
+                    : '1px solid rgba(6, 182, 212, 0.5)',
+                  boxShadow: selected
+                    ? `inset 0 0 12px ${PALETTE[cell!].h}33`
                     : 'inset 0 0 4px rgba(6, 182, 212, 0.08)',
                 }}
               >
-                {/* Ghost preview of next ball */}
                 {ghost && !cell && (
                   <div style={{ opacity: 0.35, pointerEvents: 'none' }}>
                     <BallEl colorIdx={ghost.color} size={CELL * 0.52} />
                   </div>
                 )}
 
-                {/* Trail ghost */}
                 {trailItem && (
                   <div className="ball-trail" style={{ position: 'absolute', pointerEvents: 'none', zIndex: 10 }}>
                     <BallEl colorIdx={trailItem.colorIdx} size={CELL * 0.65} anim="trail" />
                   </div>
                 )}
 
-                {/* Actual ball */}
                 {cell !== null && (
                   <BallEl
                     colorIdx={cell}
@@ -277,7 +251,6 @@ export default function App() {
                   />
                 )}
 
-                {/* Hint target dot */}
                 {hTo && !cell && (
                   <div style={{
                     width: 14, height: 14, borderRadius: '50%',
@@ -292,72 +265,75 @@ export default function App() {
         )}
       </div>
 
-{/* Controls */}
+      {/* Controls */}
       <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center', justifyContent: 'center' }}>
-        {/* Кнопка AI Hint */}
+
+        {/* AI Hint — рамка как у звука */}
         <button
           onClick={requestHint}
           disabled={busy || hintLoading || over}
           style={{
             background: hintLoading
               ? 'linear-gradient(135deg, #0d1f36, #0d1f36)'
-              : (busy || hintLoading || over) 
-                ? 'linear-gradient(135deg, #111827, #1f2937)' 
+              : (busy || hintLoading || over)
+                ? 'linear-gradient(135deg, #111827, #1f2937)'
                 : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
-            border: (busy || hintLoading || over) ? '1px solid #374151' : '1px solid #2563eb44',
-            borderRadius: 11, 
-            color: (busy || hintLoading || over) ? '#6b7280' : '#60a5fa',
-            padding: '10px 22px', 
+            border: (busy || hintLoading || over) ? '1px solid #374151' : '2px solid #38bdf8',
+            borderRadius: 11,
+            color: (busy || hintLoading || over) ? '#6b7280' : '#7dd3fc',
+            padding: '10px 22px',
             cursor: (busy || hintLoading || over) ? 'not-allowed' : 'pointer',
             fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.05em',
             opacity: (busy || hintLoading || over) ? 0.45 : 1,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            boxShadow: (busy || hintLoading || over)
+              ? '0 4px 14px rgba(0,0,0,0.4)'
+              : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
           {hintLoading ? '· · ·' : hint ? 'New Hint' : '✦ AI Hint'}
         </button>
 
-        {/* Кнопка Undo — теперь в обычном состоянии точь-в-точь как AI Hint */}
+        {/* Undo — рамка как у звука */}
         <button
           onClick={undo}
           disabled={busy || !canUndo}
           style={{
             background: (busy || !canUndo)
-              ? 'linear-gradient(135deg, #111827, #1f2937)' // Тусклый стиль, если нельзя отменить
-              : 'linear-gradient(135deg, #0d2d55, #1a3a6e)', // Яркий синий, если ход есть!
-            border: (busy || !canUndo) ? '1px solid #374151' : '1px solid #2563eb44',
+              ? 'linear-gradient(135deg, #111827, #1f2937)'
+              : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+            border: (busy || !canUndo) ? '1px solid #374151' : '2px solid #38bdf8',
             borderRadius: 11,
-            color: (busy || !canUndo) ? '#6b7280' : '#60a5fa',
+            color: (busy || !canUndo) ? '#6b7280' : '#7dd3fc',
             padding: '10px 22px',
             cursor: (busy || !canUndo) ? 'not-allowed' : 'pointer',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
+            fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.05em',
             opacity: (busy || !canUndo) ? 0.45 : 1,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            boxShadow: (busy || !canUndo)
+              ? '0 4px 14px rgba(0,0,0,0.4)'
+              : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
           Undo
         </button>
 
-        {/* Кнопка New Game — теперь ТОЖЕ яркая неоновая, а тускнеет только во время анимаций (busy) */}
+        {/* New Game — рамка как у звука */}
         <button
           onClick={newGame}
           disabled={busy}
           style={{
-            background: busy 
-              ? 'linear-gradient(135deg, #111827, #1f2937)' 
+            background: busy
+              ? 'linear-gradient(135deg, #111827, #1f2937)'
               : 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
-            border: busy ? '1px solid #374151' : '1px solid #2563eb44',
-            borderRadius: 11, 
-            color: busy ? '#6b7280' : '#60a5fa',
-            padding: '10px 22px', 
+            border: busy ? '1px solid #374151' : '2px solid #38bdf8',
+            borderRadius: 11,
+            color: busy ? '#6b7280' : '#7dd3fc',
+            padding: '10px 22px',
             cursor: busy ? 'not-allowed' : 'pointer',
-            fontSize: '0.82rem', 
-            fontWeight: 700, 
-            letterSpacing: '0.05em',
+            fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.05em',
             opacity: busy ? 0.45 : 1,
-            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+            boxShadow: busy
+              ? '0 4px 14px rgba(0,0,0,0.4)'
+              : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
           New Game
@@ -367,12 +343,12 @@ export default function App() {
       {/* Hint status */}
       <div style={{ marginTop: 12, height: 22, display: 'flex', alignItems: 'center' }}>
         {hint && (
-          <p style={{ color: '#374d6a', fontSize: '0.72rem', margin: 0, textAlign: 'center' }}>
+          <p style={{ color: '#5a7db0', fontSize: '0.72rem', margin: 0, textAlign: 'center' }}>
             Move <span style={{ color: '#f59e0b99' }}>amber</span> ball → <span style={{ color: '#22c55e99' }}>green</span> target to score
           </p>
         )}
         {hintSearched && !hint && (
-          <p style={{ color: '#1e3a5f', fontSize: '0.7rem', margin: 0 }}>
+          <p style={{ color: '#3a5a80', fontSize: '0.7rem', margin: 0 }}>
             No immediate clearing move found
           </p>
         )}
@@ -387,8 +363,8 @@ export default function App() {
           { icon: '⊕', text: 'Click empty cell to move' },
           { icon: '✦', text: 'Line 5+ to score' },
         ].map(({ icon, text }) => (
-          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#1e3a5f', fontSize: '0.68rem' }}>
-            <span style={{ color: '#2d5280' }}>{icon}</span>
+          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4a7ab0', fontSize: '0.68rem' }}>
+            <span style={{ color: '#4a7ab0' }}>{icon}</span>
             {text}
           </div>
         ))}
@@ -421,14 +397,14 @@ export default function App() {
             <h2 style={{ color: '#e2e8f0', fontSize: '1.7rem', fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
               Game Over
             </h2>
-            <p style={{ color: '#2d4a68', fontSize: '0.85rem', margin: '0 0 24px' }}>
+            <p style={{ color: '#5a8ab8', fontSize: '0.85rem', margin: '0 0 24px' }}>
               The grid is full!
             </p>
             <div style={{
               background: '#050d1a', borderRadius: 12, padding: '18px 24px', marginBottom: 28,
               border: '1px solid #0d2240',
             }}>
-              <div style={{ color: '#1e3a5f', fontSize: '0.65rem', letterSpacing: '0.25em', marginBottom: 6 }}>
+              <div style={{ color: '#4a6fa0', fontSize: '0.65rem', letterSpacing: '0.25em', marginBottom: 6 }}>
                 FINAL SCORE
               </div>
               <div style={{ color: '#38bdf8', fontSize: '2.4rem', fontWeight: 900, lineHeight: 1 }}>
