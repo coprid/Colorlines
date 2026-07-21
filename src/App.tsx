@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { BallEl, useChromaline, PALETTE } from './useChromaline';
 
 const G = 9;
@@ -82,7 +82,7 @@ export default function App() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+
       minHeight: '100dvh', // ← НОВОЕ: для мобильных (dynamic viewport height)
       background: 'radial-gradient(ellipse at 30% 20%, #0f2040 0%, #050d1a 60%, #0a0a12 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -351,12 +351,13 @@ export default function App() {
             cursor: (busy || hintLoading || over) ? 'not-allowed' : 'pointer',
             fontSize: controlsFont, fontWeight: 700, letterSpacing: '0.05em',
             opacity: (busy || hintLoading || over) ? 0.45 : 1,
+          
             boxShadow: (busy || hintLoading || over)
               ? '0 4px 14px rgba(0,0,0,0.4)'
               : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
-          {hintLoading ? '· · ·' : hint ? 'New Hint' : '✦ AI Hint'}
+          {'✦ AI Hint'}
         </button>
 
         {/* Undo */}

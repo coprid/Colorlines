@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { audioManager } from './audioManager';
 // ── Константы ─────────────────────────────────────────────────────────────────
@@ -397,41 +397,30 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
               appeared.delete(k); 
             });
 
-               // ← НОВОЕ: если новые шары собрали линию — НЕ спавним следующие шары
-    if (bonus > 0) {
-      addScore(bonus);
-      setGrid(g3);
-      setPop(appeared);
-      
-      const t4 = setTimeout(() => {
-        setPop(new Set());
-        setBusy(false);
-      }, 420);
-      timeoutsRef.current.push(t4);
-    } else {
-      const emp = emptyPositions(g3);
-      const nn = makeNextBalls(g3);
-      
-      setGrid(g3);
-      setNext(nn);
-      setPop(appeared);
-      
-      if (emp.length === 0) {
-        setOver(true);
-        setBusy(false);
-        return;
-      }
+            const emp = emptyPositions(g3);
+            const nn = makeNextBalls(g3);
+            
+            setGrid(g3);
+            setNext(nn);
+            setPop(appeared);
+            
+            if (bonus > 0) addScore(bonus);
 
-      const t4 = setTimeout(() => {
-        setPop(new Set());
-        setBusy(false);
-      }, 420);
-      timeoutsRef.current.push(t4);
-    }
+            if (emp.length === 0) {
+              setOver(true);
+              setBusy(false);
+              return;
+            }
+
+            const t4 = setTimeout(() => {
+              setPop(new Set());
+              setBusy(false);
+            }, 420);
+            timeoutsRef.current.push(t4);
   }, 280);
           timeoutsRef.current.push(t3);
         }
-      }
+  }
     }, 60);
 
   }, [grid, sel, over, busy, addScore, soundOn, clearAllTimers]);
