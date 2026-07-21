@@ -1,5 +1,6 @@
 import  { useState, useEffect } from 'react';
 import { BallEl, useChromaline, PALETTE } from './useChromaline';
+import { translations, type Lang } from './translations';
 
 const G = 9;
 
@@ -54,10 +55,23 @@ export default function App() {
   const nextGhost = (r: number, c: number) => next.find(b => b.pos[0] === r && b.pos[1] === c);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+
+   // Язык
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = localStorage.getItem('chromaline_lang') as Lang | null;
+    return saved === 'ru' ? 'ru' : 'en';
+  });
+
+  const t = translations[lang];
+
 
   useEffect(() => {
     localStorage.setItem('chromaline_sound', String(soundOn));
   }, [soundOn]);
+  useEffect(() => {
+    localStorage.setItem('chromaline_lang', lang);
+  }, [lang]);
 
   // Динамические стили
   const CELL = cellSize;
@@ -77,8 +91,6 @@ export default function App() {
   const controlsPadding = isMobile ? '8px 16px' : '10px 22px';
   const controlsFont = isMobile ? '0.75rem' : '0.82rem';
   const hintMargin = isMobile ? 8 : 12;
-  const howToPlayMargin = isMobile ? 14 : 20;
-  const howToPlayGap = isMobile ? 16 : 24;
 
   return (
     <div style={{
@@ -153,7 +165,7 @@ export default function App() {
           margin: '5px 0 0', 
           textTransform: 'uppercase' 
         }}>
-          Color Lines 3D · AI
+          {t.subtitle}
         </p>
       </div>
 
@@ -176,7 +188,7 @@ export default function App() {
             boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
             opacity: soundOn ? 1 : 0.5
           }}
-          title={soundOn ? 'Выключить звук' : 'Включить звук'}
+          title={soundOn ? 'Sound Off' : 'Sound On'}
         >
           {soundOn ? (
             <svg width={isMobile ? 16 : 20} height={isMobile ? 16 : 20} viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }}>
@@ -207,7 +219,7 @@ export default function App() {
             justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
-          title="Настройки и инструкция"
+          title="Menu"
         >
           <svg width={isMobile ? 16 : 20} height={isMobile ? 16 : 20} viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }}>
             <circle cx="12" cy="12" r="3"></circle>
@@ -215,8 +227,32 @@ export default function App() {
           </svg>
         </button>
 
+                {/* 3. Индикация языка */}
+        <button
+          onClick={() => setLang(lang === 'en' ? 'ru' : 'en')}
+          style={{
+            background: 'linear-gradient(145deg, #0d1f36, #091829)',
+            border: '2px solid #38bdf8',
+            borderRadius: isMobile ? 8 : 11,
+            padding: scorePadding,
+            minWidth: isMobile ? 44 : 54,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
+            color: '#38bdf8',
+            fontSize: isMobile ? '0.65rem' : '0.75rem',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+          }}
+          title="Switch language"
+        >
+          {lang === 'ru' ? 'РУ' : 'EN'}
+        </button>
+
         {/* SCORE / BEST */}
-        {[{ label: 'SCORE', val: score, accent: '#38bdf8' }, { label: 'BEST', val: hi, accent: '#f59e0b' }].map(({ label, val, accent }) => (
+        {[{ label: t.score, val: score, accent: '#38bdf8' }, { label: t.best, val: hi, accent: '#f59e0b' }].map(({ label, val, accent }) => (
           <div key={label} style={{
             background: 'linear-gradient(145deg, #0d1f36, #091829)',
             border: '2px solid #38bdf8',
@@ -234,7 +270,7 @@ export default function App() {
 
       {/* Next balls preview */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, marginBottom: nextMargin, height: nextHeight }}>
-        <span style={{ color: '#6b9fd1', fontSize: isMobile ? '0.55rem' : '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Next</span>
+        <span style={{ color: '#6b9fd1', fontSize: isMobile ? '0.55rem' : '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{t.next}</span>
         <div style={{ display: 'flex', gap: isMobile ? 8 : 10, alignItems: 'center' }}>
           {next.map((b, i) => (
             <BallEl key={i} colorIdx={b.color} size={isMobile ? 18 : 24} />
@@ -351,13 +387,13 @@ export default function App() {
             cursor: (busy || hintLoading || over) ? 'not-allowed' : 'pointer',
             fontSize: controlsFont, fontWeight: 700, letterSpacing: '0.05em',
             opacity: (busy || hintLoading || over) ? 0.45 : 1,
-          
+
             boxShadow: (busy || hintLoading || over)
               ? '0 4px 14px rgba(0,0,0,0.4)'
               : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
-          {'✦ AI Hint'}
+          {t.hint}
         </button>
 
         {/* Undo */}
@@ -380,7 +416,7 @@ export default function App() {
               : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
-          Undo
+          {t.undo}
         </button>
 
         {/* New Game */}
@@ -403,7 +439,7 @@ export default function App() {
               : '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
           }}
         >
-          New Game
+          {t.newGame}
         </button>
       </div>
 
@@ -419,26 +455,6 @@ export default function App() {
             No immediate clearing move found
           </p>
         )}
-      </div>
-
-      {/* How to play */}
-      <div style={{
-        marginTop: howToPlayMargin, 
-        display: 'flex', 
-        gap: howToPlayGap, 
-        flexWrap: 'wrap', 
-        justifyContent: 'center',
-      }}>
-        {[
-          { icon: '◉', text: 'Click ball to select' },
-          { icon: '⊕', text: 'Click empty cell to move' },
-          { icon: '✦', text: 'Line 5+ to score' },
-        ].map(({ icon, text }) => (
-          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#4a7ab0', fontSize: isMobile ? '0.6rem' : '0.68rem' }}>
-            <span style={{ color: '#4a7ab0' }}>{icon}</span>
-            {text}
-          </div>
-        ))}
       </div>
 
       {/* Game Over overlay */}
@@ -467,17 +483,17 @@ export default function App() {
               ))}
             </div>
             <h2 style={{ color: '#e2e8f0', fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-              Game Over
+              {t.gameOver}
             </h2>
             <p style={{ color: '#5a8ab8', fontSize: isMobile ? '0.75rem' : '0.85rem', margin: '0 0 24px' }}>
-              The grid is full!
+              {t.gridFull}
             </p>
             <div style={{
               background: '#050d1a', borderRadius: 12, padding: '18px 24px', marginBottom: 28,
               border: '1px solid #0d2240',
             }}>
               <div style={{ color: '#4a6fa0', fontSize: '0.65rem', letterSpacing: '0.25em', marginBottom: 6 }}>
-                FINAL SCORE
+                {t.finalScore}
               </div>
               <div style={{ color: '#38bdf8', fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 900, lineHeight: 1 }}>
                 {score}
@@ -487,7 +503,7 @@ export default function App() {
                   color: '#22c55e', fontSize: '0.78rem', marginTop: 8, fontWeight: 700,
                   letterSpacing: '0.1em',
                 }}>
-                  ✦ NEW BEST
+                  {t.newBest}
                 </div>
               )}
             </div>
@@ -502,11 +518,151 @@ export default function App() {
                 boxShadow: '0 4px 20px #2563eb66',
               }}
             >
-              PLAY AGAIN
+              {t.playAgain}
             </button>
           </div>
         </div>
       )}
+
+      {/* Menu overlay */}
+      {isMenuOpen && !over && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(5,13,26,0.92)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+          backdropFilter: 'blur(6px)',
+          padding: '16px',
+        }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #0d1f36, #070f1c)',
+            border: '1px solid #1e3a5f',
+            borderRadius: 24, padding: isMobile ? '32px 24px' : '44px 40px', textAlign: 'center',
+            maxWidth: 340, width: '100%',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
+          }}>
+            <h2 style={{
+              color: '#e2e8f0', fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800,
+              margin: '0 0 24px', letterSpacing: '-0.02em',
+            }}>
+              {t.menuTitle}
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+                  border: '2px solid #38bdf8', borderRadius: 12,
+                  color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
+                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
+                }}
+              >
+                {t.menuContinue}
+              </button>
+
+              <button
+                onClick={() => setShowRules(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+                  border: '2px solid #38bdf8', borderRadius: 12,
+                  color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
+                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
+                }}
+              >
+                {t.menuRules}
+              </button>
+
+              <button
+                onClick={() => setLang(lang === 'en' ? 'ru' : 'en')}
+                style={{
+                  background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+                  border: '2px solid #38bdf8', borderRadius: 12,
+                  color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
+                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
+                }}
+              >
+                {t.menuLang}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rules overlay */}
+      {showRules && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(5,13,26,0.92)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+          backdropFilter: 'blur(6px)',
+          padding: '16px',
+        }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #0d1f36, #070f1c)',
+            border: '1px solid #1e3a5f',
+            borderRadius: 24, padding: isMobile ? '28px 20px' : '36px 32px', textAlign: 'center',
+            maxWidth: 380, width: '100%',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
+          }}>
+            <h2 style={{
+              color: '#e2e8f0', fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: 800,
+              margin: '0 0 20px', letterSpacing: '-0.02em',
+            }}>
+              {t.rulesTitle}
+            </h2>
+
+            <div style={{ textAlign: 'left', marginBottom: 24 }}>
+              {[
+                { num: '1', title: t.rulesSelect, desc: t.rulesSelectDesc },
+                { num: '2', title: t.rulesMove, desc: t.rulesMoveDesc },
+                { num: '3', title: t.rulesScore, desc: t.rulesScoreDesc },
+                { num: '4', title: t.rulesWatch, desc: t.rulesWatchDesc },
+              ].map(({ num, title, desc }) => (
+                <div key={num} style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: '0.75rem', fontWeight: 800,
+                    flexShrink: 0, marginTop: 2,
+                  }}>
+                    {num}
+                  </div>
+                  <div>
+                    <div style={{ color: '#7dd3fc', fontSize: '0.85rem', fontWeight: 700, marginBottom: 2 }}>
+                      {title}
+                    </div>
+                    <div style={{ color: '#5a8ab8', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                      {desc}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ color: '#4a7ab0', fontSize: '0.75rem', margin: '0 0 20px', lineHeight: 1.5 }}>
+              {t.rulesFooter}
+            </p>
+
+            <button
+              onClick={() => setShowRules(false)}
+              style={{
+                background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
+                border: '2px solid #38bdf8', borderRadius: 12,
+                color: '#7dd3fc', padding: '12px 32px', cursor: 'pointer',
+                fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
+              }}
+            >
+              {t.menuContinue}
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
