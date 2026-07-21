@@ -90,7 +90,6 @@ export default function App() {
   const controlsMargin = isMobile ? 16 : 22;
   const controlsPadding = isMobile ? '8px 16px' : '10px 22px';
   const controlsFont = isMobile ? '0.75rem' : '0.82rem';
-  const hintMargin = isMobile ? 8 : 12;
 
   return (
     <div style={{
@@ -148,7 +147,7 @@ export default function App() {
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: titleMargin }}>
         <h1 style={{
-          fontSize: isMobile ? 'clamp(1.2rem, 6vw, 1.8rem)' : 'clamp(1.6rem, 5vw, 2.4rem)',
+           fontSize: isMobile ? 'clamp(1.4rem, 7vw, 2.2rem)' : 'clamp(2rem, 6vw, 3rem)',
           fontWeight: 900,
           letterSpacing: '-0.03em', margin: 0,
           background: 'linear-gradient(90deg, #38bdf8, #818cf8 25%, #f472b6 50%, #fb923c 75%, #38bdf8)',
@@ -160,7 +159,7 @@ export default function App() {
         </h1>
         <p style={{ 
           color: '#5a8ab8', 
-          fontSize: isMobile ? '0.6rem' : '0.68rem', 
+          fontSize: isMobile ? '0.75rem' : '0.85rem', 
           letterSpacing: '0.35em', 
           margin: '5px 0 0', 
           textTransform: 'uppercase' 
@@ -227,7 +226,7 @@ export default function App() {
           </svg>
         </button>
 
-                {/* 3. Индикация языка */}
+        {/* 3. Индикация языка */}
         <button
           onClick={() => setLang(lang === 'en' ? 'ru' : 'en')}
           style={{
@@ -242,7 +241,7 @@ export default function App() {
             justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
             color: '#38bdf8',
-            fontSize: isMobile ? '0.65rem' : '0.75rem',
+            fontSize: isMobile ? '0.85rem' : '1rem',
             fontWeight: 800,
             letterSpacing: '0.05em',
           }}
@@ -270,7 +269,7 @@ export default function App() {
 
       {/* Next balls preview */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14, marginBottom: nextMargin, height: nextHeight }}>
-        <span style={{ color: '#6b9fd1', fontSize: isMobile ? '0.55rem' : '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{t.next}</span>
+        <span style={{ color: '#6b9fd1', fontSize: isMobile ? '0.75rem' : '0.85rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{t.next}</span>
         <div style={{ display: 'flex', gap: isMobile ? 8 : 10, alignItems: 'center' }}>
           {next.map((b, i) => (
             <BallEl key={i} colorIdx={b.color} size={isMobile ? 18 : 24} />
@@ -443,20 +442,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* Hint status */}
-      <div style={{ marginTop: hintMargin, height: isMobile ? 18 : 22, display: 'flex', alignItems: 'center' }}>
-        {hint && (
-          <p style={{ color: '#5a7db0', fontSize: isMobile ? '0.65rem' : '0.72rem', margin: 0, textAlign: 'center' }}>
-            Move <span style={{ color: '#f59e0b99' }}>amber</span> ball → <span style={{ color: '#22c55e99' }}>green</span> target to score
-          </p>
-        )}
-        {hintSearched && !hint && (
-          <p style={{ color: '#3a5a80', fontSize: isMobile ? '0.62rem' : '0.7rem', margin: 0 }}>
-            No immediate clearing move found
-          </p>
-        )}
-      </div>
-
       {/* Game Over overlay */}
       {over && (
         <div style={{
@@ -469,8 +454,8 @@ export default function App() {
           <div style={{
             background: 'linear-gradient(145deg, #0d1f36, #070f1c)',
             border: '1px solid #1e3a5f',
-            borderRadius: 24, padding: isMobile ? '32px 24px' : '44px 40px', textAlign: 'center',
-            maxWidth: 340, width: '100%',
+            borderRadius: 24, padding: isMobile ? '40px 28px' : '52px 48px', textAlign: 'center',
+            maxWidth: 420, width: '100%',
             boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
           }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 18 }}>
@@ -482,25 +467,25 @@ export default function App() {
                 }} />
               ))}
             </div>
-            <h2 style={{ color: '#e2e8f0', fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ color: '#e2e8f0', fontSize: isMobile ? '1.6rem' : '2rem', fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
               {t.gameOver}
             </h2>
-            <p style={{ color: '#5a8ab8', fontSize: isMobile ? '0.75rem' : '0.85rem', margin: '0 0 24px' }}>
+            <p style={{ color: '#5a8ab8', fontSize: isMobile ? '0.85rem' : '1rem', margin: '0 0 24px' }}>
               {t.gridFull}
             </p>
             <div style={{
               background: '#050d1a', borderRadius: 12, padding: '18px 24px', marginBottom: 28,
               border: '1px solid #0d2240',
             }}>
-              <div style={{ color: '#4a6fa0', fontSize: '0.65rem', letterSpacing: '0.25em', marginBottom: 6 }}>
+              <div style={{ color: '#4a6fa0', fontSize: '0.75rem', letterSpacing: '0.25em', marginBottom: 6 }}>
                 {t.finalScore}
               </div>
-              <div style={{ color: '#38bdf8', fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 900, lineHeight: 1 }}>
+              <div style={{ color: '#38bdf8', fontSize: isMobile ? '2.2rem' : '2.8rem', fontWeight: 900, lineHeight: 1 }}>
                 {score}
               </div>
               {score > 0 && score >= hi && (
                 <div style={{
-                  color: '#22c55e', fontSize: '0.78rem', marginTop: 8, fontWeight: 700,
+                  color: '#22c55e', fontSize: '0.85rem', marginTop: 8, fontWeight: 700,
                   letterSpacing: '0.1em',
                 }}>
                   {t.newBest}
@@ -513,7 +498,7 @@ export default function App() {
                 background: 'linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6)',
                 border: 'none', borderRadius: 12, color: '#fff',
                 padding: '13px 0', cursor: 'pointer',
-                fontSize: '0.9rem', fontWeight: 800,
+                fontSize: '1rem', fontWeight: 800,
                 letterSpacing: '0.08em', width: '100%',
                 boxShadow: '0 4px 20px #2563eb66',
               }}
@@ -536,12 +521,12 @@ export default function App() {
           <div style={{
             background: 'linear-gradient(145deg, #0d1f36, #070f1c)',
             border: '1px solid #1e3a5f',
-            borderRadius: 24, padding: isMobile ? '32px 24px' : '44px 40px', textAlign: 'center',
-            maxWidth: 340, width: '100%',
+            borderRadius: 24, padding: isMobile ? '40px 28px' : '52px 48px', textAlign: 'center',
+            maxWidth: 420, width: '100%',
             boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
           }}>
             <h2 style={{
-              color: '#e2e8f0', fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800,
+              color: '#e2e8f0', fontSize: isMobile ? '1.6rem' : '2rem', fontWeight: 800,
               margin: '0 0 24px', letterSpacing: '-0.02em',
             }}>
               {t.menuTitle}
@@ -554,7 +539,7 @@ export default function App() {
                   background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
                   border: '2px solid #38bdf8', borderRadius: 12,
                   color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
-                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 700, letterSpacing: '0.05em',
                   boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
                 }}
               >
@@ -567,7 +552,7 @@ export default function App() {
                   background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
                   border: '2px solid #38bdf8', borderRadius: 12,
                   color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
-                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 700, letterSpacing: '0.05em',
                   boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
                 }}
               >
@@ -580,7 +565,7 @@ export default function App() {
                   background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
                   border: '2px solid #38bdf8', borderRadius: 12,
                   color: '#7dd3fc', padding: '14px 0', cursor: 'pointer',
-                  fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                  fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 700, letterSpacing: '0.05em',
                   boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
                 }}
               >
@@ -603,12 +588,12 @@ export default function App() {
           <div style={{
             background: 'linear-gradient(145deg, #0d1f36, #070f1c)',
             border: '1px solid #1e3a5f',
-            borderRadius: 24, padding: isMobile ? '28px 20px' : '36px 32px', textAlign: 'center',
-            maxWidth: 380, width: '100%',
+            borderRadius: 24, padding: isMobile ? '40px 28px' : '52px 48px', textAlign: 'center',
+            maxWidth: 420, width: '100%',
             boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px #0d2d5533',
           }}>
             <h2 style={{
-              color: '#e2e8f0', fontSize: isMobile ? '1.3rem' : '1.5rem', fontWeight: 800,
+              color: '#e2e8f0', fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 800,
               margin: '0 0 20px', letterSpacing: '-0.02em',
             }}>
               {t.rulesTitle}
@@ -623,19 +608,19 @@ export default function App() {
               ].map(({ num, title, desc }) => (
                 <div key={num} style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start' }}>
                   <div style={{
-                    width: 24, height: 24, borderRadius: '50%',
+                    width: 28, height: 28, borderRadius: '50%',
                     background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: '0.75rem', fontWeight: 800,
+                    color: '#fff', fontSize: '0.85rem', fontWeight: 800,
                     flexShrink: 0, marginTop: 2,
                   }}>
                     {num}
                   </div>
                   <div>
-                    <div style={{ color: '#7dd3fc', fontSize: '0.85rem', fontWeight: 700, marginBottom: 2 }}>
+                    <div style={{ color: '#7dd3fc', fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 700, marginBottom: 2 }}>
                       {title}
                     </div>
-                    <div style={{ color: '#5a8ab8', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                    <div style={{ color: '#5a8ab8', fontSize: isMobile ? '0.9rem' : '1rem', lineHeight: 1.4 }}>
                       {desc}
                     </div>
                   </div>
@@ -643,7 +628,7 @@ export default function App() {
               ))}
             </div>
 
-            <p style={{ color: '#4a7ab0', fontSize: '0.75rem', margin: '0 0 20px', lineHeight: 1.5 }}>
+            <p style={{ color: '#4a7ab0', fontSize: isMobile ? '0.85rem' : '0.95rem', margin: '0 0 20px', lineHeight: 1.5 }}>
               {t.rulesFooter}
             </p>
 
@@ -653,7 +638,7 @@ export default function App() {
                 background: 'linear-gradient(135deg, #0d2d55, #1a3a6e)',
                 border: '2px solid #38bdf8', borderRadius: 12,
                 color: '#7dd3fc', padding: '12px 32px', cursor: 'pointer',
-                fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.05em',
+                fontSize: '1rem', fontWeight: 700, letterSpacing: '0.05em',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(56, 189, 248, 0.3)',
               }}
             >
