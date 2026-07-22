@@ -3,7 +3,7 @@ class AudioManager {
   private ctx: AudioContext | null = null;
   private isMatchPlaying = false;
   // Инициализация контекста (браузеры блокируют звук до первого клика пользователя)
-  private initContext() {
+  initContext() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
@@ -47,7 +47,7 @@ class AudioManager {
     const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
-    
+
     // 2. Заполняем его случайным шумом (это основа для шуршания)
     for (let i = 0; i < bufferSize; i++) {
       data[i] = Math.random() * 2 - 1;
@@ -56,7 +56,7 @@ class AudioManager {
     // 3. Создаем источник звука из этого буфера
     const noiseNode = ctx.createBufferSource();
     noiseNode.buffer = buffer;
-  
+
     const gain = ctx.createGain();
     // 4. Создаем фильтр, который уберет свист и сделает звук глухим и мягким
     const filter = ctx.createBiquadFilter();
@@ -82,7 +82,7 @@ class AudioManager {
   // 3. Сгорание линии (сочный мажорный аккорд)
   playMatch(enabled: boolean) {
     if (!enabled) return;
-    
+
     if (this.isMatchPlaying) return;
     this.isMatchPlaying = true;
 
@@ -97,7 +97,7 @@ class AudioManager {
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      
+
       const startTime = now + index * 0.03;
 
       osc.frequency.setValueAtTime(freq, startTime); 
@@ -107,7 +107,7 @@ class AudioManager {
       gain.gain.setValueAtTime(0, startTime);
       // Плавно (за 0.005 сек) поднимаем до целевой громкости 0.03
       gain.gain.linearRampToValueAtTime(0.07, startTime + 0.005);
-      
+
       // --- ПЛАВНОЕ ЗАТУХАНИЕ ---
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
@@ -152,6 +152,40 @@ class AudioManager {
 
     osc.start(now);
     osc.stop(now + duration);
+  }
+
+  // 5. Подсказка (лёгкий звук треугольника)
+    playHint(enabled: boolean) {
+    if (!enabled) return;
+    const ctx = this.initContext();
+    const now = ctx.currentTime;
+    const duration = 0.15;
+
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1600, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.08, now + 0.01);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(3200, now);
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(0.03, now + 0.01);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.5);
+
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
   }
 }
 

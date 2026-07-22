@@ -404,8 +404,10 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
             setNext(nn);
             setPop(appeared);
             
-            if (bonus > 0) addScore(bonus);
-
+            if (bonus > 0) addScore(bonus);if (bonus > 0) {
+              audioManager.playMatch(soundOn);
+              addScore(bonus);
+            }
             if (emp.length === 0) {
               setOver(true);
               setBusy(false);
@@ -427,6 +429,8 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const requestHint = useCallback(() => {
     if (busy || hintLoading || over) return;
+   
+    audioManager.playHint(soundOn);
     setHintLoading(true);
     setHintSearched(false);
     setTimeout(() => {
