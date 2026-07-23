@@ -43,7 +43,7 @@ export default function App() {
   }, []);
 
   const {
-    grid, sel, next, score, hi, over, hint, hintSearched, hintLoading, busy,
+    grid, sel, next, score, hi, over, hint, hintLoading, busy,
     flash, pop, trail, onCell, newGame, requestHint, undo, canUndo
   } = useChromaline(soundOn);
 
@@ -79,17 +79,17 @@ export default function App() {
   const gridPadding = isMobile ? 6 : 10;
   const gridBorderRadius = isMobile ? 12 : 18;
   const cellBorderRadius = isMobile ? 6 : 9;
-  const titleMargin = isMobile ? 16 : 28;
-  const scoreGap = isMobile ? 6 : 12;
-  const scoreMargin = isMobile ? 12 : 20;
-  const scorePadding = isMobile ? '8px 14px' : '12px 22px';
+  const titleMargin = isMobile ? 4 : 28;
+  const scoreGap = isMobile ? 4 : 12;
+  const scoreMargin = isMobile ? 4 : 20;
+  const scorePadding = isMobile ? '6px 10px' : '12px 22px';
   const scoreMinWidth = isMobile ? 70 : 108;
-  const nextMargin = isMobile ? 10 : 14;
-  const nextHeight = isMobile ? 28 : 34;
-  const controlsGap = isMobile ? 8 : 12;
-  const controlsMargin = isMobile ? 16 : 22;
-  const controlsPadding = isMobile ? '8px 16px' : '10px 22px';
-  const controlsFont = isMobile ? '0.75rem' : '0.82rem';
+  const nextMargin = isMobile ? 2 : 14;
+  const nextHeight = isMobile ? 22 : 34;
+  const controlsGap = isMobile ? 4 : 12;
+  const controlsMargin = isMobile ? 6 : 22;
+  const controlsPadding = isMobile ? '5px 10px' : '10px 22px';
+  const controlsFont = isMobile ? '0.7rem' : '0.82rem';
 
   return (
     <div style={{
@@ -97,7 +97,7 @@ export default function App() {
       minHeight: '100dvh', // ← НОВОЕ: для мобильных (dynamic viewport height)
       background: 'radial-gradient(ellipse at 30% 20%, #0f2040 0%, #050d1a 60%, #0a0a12 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: isMobile ? '8px' : '16px',
+      padding: isMobile ? '4px 4px 64px' : '16px',
       fontFamily: "'Inter', system-ui, sans-serif",
       userSelect: 'none',
       overflowX: 'hidden', // ← НОВОЕ: запрещаем горизонтальную прокрутку
@@ -147,7 +147,7 @@ export default function App() {
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: titleMargin }}>
         <h1 style={{
-           fontSize: isMobile ? 'clamp(1.4rem, 7vw, 2.2rem)' : 'clamp(2rem, 6vw, 3rem)',
+          fontSize: isMobile ? 'clamp(1.4rem, 7vw, 2.2rem)' : 'clamp(2rem, 6vw, 3rem)',
           fontWeight: 900,
           letterSpacing: '-0.03em', margin: 0,
           background: 'linear-gradient(90deg, #38bdf8, #818cf8 25%, #f472b6 50%, #fb923c 75%, #38bdf8)',
@@ -161,7 +161,7 @@ export default function App() {
           color: '#5a8ab8', 
           fontSize: isMobile ? '0.75rem' : '0.85rem', 
           letterSpacing: '0.35em', 
-          margin: '5px 0 0', 
+          margin: '3px 0 0', 
           textTransform: 'uppercase' 
         }}>
           {t.subtitle}

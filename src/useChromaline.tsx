@@ -404,7 +404,7 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
             setNext(nn);
             setPop(appeared);
             
-            if (bonus > 0) addScore(bonus);if (bonus > 0) {
+            if (bonus > 0) {
               audioManager.playMatch(soundOn);
               addScore(bonus);
             }
@@ -425,7 +425,7 @@ const moveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   }
     }, 60);
 
-  }, [grid, sel, over, busy, addScore, soundOn, clearAllTimers]);
+  }, [grid, sel, over, busy, addScore, soundOn, clearAllTimers, score]);
 
   const requestHint = useCallback(() => {
     if (busy || hintLoading || over) return;
